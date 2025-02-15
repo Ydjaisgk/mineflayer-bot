@@ -10,8 +10,6 @@
   "description": "",
   "dependencies": {
     "mineflayer": "^4.26.0",
-    "mineflayer-pathfinder": "^2.4.5",
-    "pkg": "^5.8.1",
-    "readline-sync": "^1.4.10"
+    "mineflayer-pathfinder": "^2.4.5"
   }
 }

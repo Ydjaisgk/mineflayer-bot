@@ -1,25 +1,8 @@
+process.removeAllListeners('warning')
 const mineflayer = require('mineflayer');
 const { Vec3 } = require('mineflayer')
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow, GoalBlock } } = require('mineflayer-pathfinder')
 const readline = require('node:readline');
-const rlsync = require('readline-sync')
-
-const botname = rlsync.question('Username: ')
-const botserver = rlsync.question('Server: ')
-const [bothost, botport] = botserver.split(':')
-const botversion = rlsync.question('Version: ')
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-})
-
-const options = {
-  username: botname,
-  host: bothost,
-  port: botport,
-  version: botversion
-}
 
 const commands = {
   help: {
@@ -258,10 +241,31 @@ Object.values(commands).forEach(command => {
   });
 });
 
-function createBot() {
-  const bot = mineflayer.createBot(options)
-  bot.host = options.host
-  bot.port = options.port
+async function createBot() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const question = (query) => new Promise((resolve) => {
+    process.stdout.write(query);
+    rl.question(query, resolve);
+  });
+
+  const botname = await question('Username: ');
+  const botserver = await question('Server: ');
+  const [bothost, botport] = botserver.split(':');
+  const botversion = await question('Version: ')
+
+  const bot = mineflayer.createBot({
+    host: bothost,
+    port: botport,
+    username: botname,
+    version: botversion
+  })
+
+  bot.host = bothost
+  bot.port = botport
 
   bot._client.on('connect', () => {
     console.log(`Bot connect to ${bot.host}:${bot.port}`)
@@ -273,11 +277,19 @@ function createBot() {
 
   bot.once('spawn', () => {
     console.log(`${bot.username} spawn on ${bot.host}:${bot.port}`)
+    const mcData = require('minecraft-data')(bot.version);
+    let movements = new Movements(bot, mcData);
+    bot.pathfinder.setMovements(movements)
   })
+
+  bot.loadPlugin(pathfinder)
 
   bot.on('message', (message) => {
     console.log(message.toAnsi())
   })
+
+  bot.on('kicked', console.log)
+  bot.on('error', console.log)
 
   rl.setPrompt('')
   rl.prompt()
